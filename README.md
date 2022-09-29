@@ -1,2 +1,2 @@
-# simpleCypto
+# simpleCrypto
  
