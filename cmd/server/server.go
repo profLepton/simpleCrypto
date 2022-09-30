@@ -10,14 +10,16 @@ import (
 	"strings"
 )
 
-// Initializing VARS
+// Initializing global variables
 var (
-	DIFFICULTY    = 6
-	FILE_NAME     = "./blockChain.txt"
-	GENESIS_BLOCK = "0000000000000000000000000000000000000000000000000000000000000000~satoshi~11970128322"
-	TAIL          = GENESIS_BLOCK
-	TERMINATOR    = '\n'
-	ADDRESS       = ":8888"
+	DIFFICULTY     = 6
+	FILE_NAME      = "./blockChain.txt"
+	GENESIS_BLOCK  = "0000000000000000000000000000000000000000000000000000000000000000~satoshi~11970128322"
+	TAIL           = GENESIS_BLOCK
+	TERMINATOR     = '\n'
+	ADDRESS        = ":8888"
+	BLOCK_REQUEST  = "TAIL"
+	BLOCK_ACCEPTED = "BLOCK ACCEPTED"
 )
 
 func main() {
@@ -26,7 +28,6 @@ func main() {
 
 	//Check and create BlockChain File
 	TAIL = initializeServer(FILE_NAME)
-	log.Printf("TAIL BLOCK: %s\n", TAIL)
 
 	//Start server and handle connections
 	log.Println("Server> Listening for connections.")
@@ -81,21 +82,25 @@ func HandleConnections(conn net.Conn) {
 
 	recvdBytes, err := bufReader.ReadBytes('\n')
 	if err != nil {
-		log.Printf("TCP error: %s\n", err.Error())
+		log.Printf("Server> TCP error: %s\n", err.Error())
 	}
 	recvdString := string(recvdBytes)
 	var sendBytes []byte
 	var sendString string
-	if strings.HasPrefix(recvdString, "TAIL") {
+	if strings.HasPrefix(recvdString, BLOCK_REQUEST) {
+		log.Print("Server> Received a block request.")
 		sendString = TAIL
 	} else {
-		newBl := recvdString
+		newBl := recvdString[:len(recvdString)-1]
+		log.Print("Server> Received block\n")
 		if VerifyBlockString(TAIL, newBl) {
 			//Block has been accepted.
+			log.Print("Server> New block has been accepted!")
 			TAIL = newBl
 			appendBlockToDisk(newBl, FILE_NAME)
 			sendString = "BLOCK ACCEPTED"
 		} else {
+			log.Print("Server> Invalid submission.")
 			sendString = "Invalid Submission"
 		}
 	}
@@ -104,7 +109,7 @@ func HandleConnections(conn net.Conn) {
 	sendBytes = []byte(fmt.Sprintf("%s\n", sendString))
 	_, err = conn.Write(sendBytes)
 	if err != nil {
-		log.Printf("TCP error: %s\n", err.Error())
+		log.Printf("Server> TCP error: %s\n", err.Error())
 	}
 
 	//Disconnect
@@ -130,7 +135,9 @@ func VerifyBlockString(TAIL string, submittedBlock string) bool {
 	//Check if block has this bctHash at the correct spot, if yes then check pow
 
 	//else return false if pow is not satisfied or hctHash is misplaced or incorrect.
-
+	for i := range block_array {
+		log.Print(block_array[i])
+	}
 	if bctHash == block_array[0] {
 		//check proof of work
 		submittedBlockHash := HexaHashFromString(submittedBlock)
@@ -151,8 +158,6 @@ func initializeServer(file_name string) string {
 		return TAIL
 	}
 
-	defer f.Close()
-
 	scanner := bufio.NewScanner(f)
 
 	var block string
@@ -160,15 +165,16 @@ func initializeServer(file_name string) string {
 	for scanner.Scan() {
 		block = scanner.Text()
 	}
-
+	f.Close()
 	return block
 }
 
 func appendBlockToDisk(block string, file_name string) {
-	f, err := os.Open(FILE_NAME)
+	f, err := os.OpenFile(FILE_NAME, os.O_APPEND|os.O_WRONLY, 0666)
 	if err != nil {
 		panic(err)
 	}
 	f.WriteString(block + "\n")
+	log.Print("Server> Updating block chain")
 	f.Close()
 }
