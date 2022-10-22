@@ -12,7 +12,7 @@ import (
 
 // Initializing global variables
 var (
-	DIFFICULTY     = 6
+	DIFFICULTY     = 3
 	FILE_NAME      = "./blockChain.txt"
 	GENESIS_BLOCK  = "0000000000000000000000000000000000000000000000000000000000000000~satoshi~11970128322"
 	TAIL           = GENESIS_BLOCK

@@ -15,7 +15,7 @@ var (
 	TERMINATOR     = []byte("\n")
 	BLOCK_REQUEST  = "TAIL\n"
 	BLOCK_ACCEPTED = "BLOCK ACCEPTED"
-	PAYLOAD        = "Akshay's First Coin"
+	PAYLOAD        = "I'm coming"
 )
 
 func main() {
@@ -64,7 +64,6 @@ func main() {
 	}
 	//Read response
 	bufReader = bufio.NewReader(conn)
-	rcvdBytes, err = bufReader.ReadBytes('\n')
 	conn.Close()
 	rcvdString = string(rcvdBytes)
 	log.Print(rcvdString)
